@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using ValidationSystem.Core.Ai;
 using ValidationSystem.Core.Services;
 using ValidationSystem.Core.Validation;
 
@@ -18,6 +19,7 @@ public sealed class ApiExceptionHandler(IProblemDetailsService problemDetails, I
             InvalidDefinitionException ide => (StatusCodes.Status400BadRequest, "הגדרת הבדיקה אינה תקינה",
                 new Dictionary<string, object?> { ["errors"] = ide.Errors }),
             NotFoundException nf => (StatusCodes.Status404NotFound, nf.Message, null),
+            AiProviderException ai => (StatusCodes.Status503ServiceUnavailable, ai.Message, null),
             BadHttpRequestException => (StatusCodes.Status400BadRequest, "הבקשה אינה תקינה", null),
             OperationCanceledException => (499, "הבקשה בוטלה", null),
             _ => (StatusCodes.Status500InternalServerError, "אירעה שגיאה בלתי צפויה. נסו שוב מאוחר יותר.", null)

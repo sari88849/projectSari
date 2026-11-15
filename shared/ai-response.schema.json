@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://validation-system.local/schemas/ai-response.schema.json",
+  "title": "AI validation proposal",
+  "description": "Structured response an AI provider (mock or real) must return for a natural-language validation request. It is translated by the backend into the engine's ValidationDefinition and validated against the metadata catalog before it is shown to the user.",
+  "type": "object",
+  "required": ["status", "rootEntity", "logic", "conditions"],
+  "additionalProperties": false,
+  "properties": {
+    "status": {
+      "description": "ok = a proposal was produced; unsupported = the request could not be mapped to the catalog.",
+      "enum": ["ok", "unsupported"]
+    },
+    "name": { "type": "string", "maxLength": 200, "description": "Suggested validation name (Hebrew)." },
+    "description": { "type": "string", "maxLength": 1000, "description": "Suggested business description (Hebrew)." },
+    "rootEntity": { "type": "string", "description": "Entity key from the provided context (e.g. Employee)." },
+    "logic": { "enum": ["And", "Or"], "description": "How the top-level conditions are combined." },
+    "conditions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/node" },
+      "description": "Conditions that identify INVALID records."
+    },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "notes": { "type": "array", "items": { "type": "string" }, "description": "Assumptions or parts of the request that were not understood." }
+  },
+  "$defs": {
+    "scalar": { "type": ["string", "number", "boolean"] },
+    "node": {
+      "oneOf": [
+        { "$ref": "#/$defs/condition" },
+        { "$ref": "#/$defs/group" }
+      ]
+    },
+    "group": {
+      "type": "object",
+      "required": ["logic", "conditions"],
+      "additionalProperties": false,
+      "properties": {
+        "logic": { "enum": ["And", "Or"] },
+        "conditions": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/node" } }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "required": ["field", "operator"],
+      "additionalProperties": false,
+      "properties": {
+        "field": { "type": "string", "description": "Field path from the context, e.g. Salary or Department.IsActive." },
+        "operator": {
+          "enum": ["Equals", "NotEquals", "GreaterThan", "GreaterThanOrEqual", "LessThan", "LessThanOrEqual",
+                   "Between", "In", "Contains", "StartsWith", "IsEmpty", "IsNotEmpty"]
+        },
+        "value": { "$ref": "#/$defs/scalar", "description": "Constant to compare with (dates as yyyy-MM-dd)." },
+        "valueTo": { "$ref": "#/$defs/scalar", "description": "Upper bound for Between." },
+        "values": { "type": "array", "items": { "$ref": "#/$defs/scalar" }, "description": "List for In." },
+        "compareToField": { "type": "string", "description": "Compare with another field path instead of a constant." }
+      }
+    }
+  }
+}

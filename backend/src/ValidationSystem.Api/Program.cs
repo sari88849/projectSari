@@ -18,6 +18,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddSingleton(builder.Configuration.GetSection("Validation").Get<ValidationOptions>() ?? new ValidationOptions());
 builder.Services.AddScoped<ValidationService>();
+builder.Services.AddScoped<ValidationSystem.Core.Ai.AiProposalService>();
 
 // Angular dev server
 var origins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? ["http://localhost:4200"];

@@ -27,9 +27,14 @@ if (-not (Get-Command sqlcmd -ErrorAction SilentlyContinue)) {
 # Common flags:
 #   -E  Windows authentication          -b  fail (non-zero exit) on any SQL error
 #   -I  QUOTED_IDENTIFIER on             -f 65001  read the script files as UTF-8 (Hebrew text)
-#   -C  trust the server certificate. Newer sqlcmd versions (ODBC 18 / go-sqlcmd) encrypt by default
-#       and reject the self-signed certificate of a local SQL Server; older versions accept -C as well.
-$sqlcmdArgs = @('-S', $Server, '-E', '-b', '-I', '-C', '-f', '65001')
+#   -C  trust the server certificate. sqlcmd 18 (ODBC Driver 18) encrypts by default and rejects the
+#       self-signed certificate of a local SQL Server; older sqlcmd and go-sqlcmd accept -C as well.
+$sqlcmdArgs = @('-S', $Server, '-E', '-b', '-I', '-C')
+
+# The ODBC-based sqlcmd (versions 13-18) needs "-f 65001" to read the UTF-8 script files correctly.
+# The newer go-sqlcmd has no -f option (it reads UTF-8 natively), so the flag is added only when supported.
+$help = (& sqlcmd '-?' 2>&1 | Out-String)
+if ($help -match '-f\s*<codepage>') { $sqlcmdArgs += @('-f', '65001') }
 
 # Fail early with a clear message if the server cannot be reached or is older than SQL Server 2016 (v13).
 $major = & sqlcmd @sqlcmdArgs -h -1 -W -Q "SET NOCOUNT ON; SELECT CAST(SERVERPROPERTY('ProductMajorVersion') AS int);"

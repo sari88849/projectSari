@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ValidationSystem.Api/ValidationSystem.Api.csproj" />
+    <Project Path="src/ValidationSystem.Core/ValidationSystem.Core.csproj" />
+    <Project Path="src/ValidationSystem.Infrastructure/ValidationSystem.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ValidationSystem.Core.Tests/ValidationSystem.Core.Tests.csproj" />
+    <Project Path="tests/ValidationSystem.IntegrationTests/ValidationSystem.IntegrationTests.csproj" />
+  </Folder>
+</Solution>

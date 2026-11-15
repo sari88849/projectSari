@@ -1,0 +1,18 @@
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; align-items: start; }
+.full { width: 100%; }
+.small { font-size: 13px; font-weight: 400; }
+.ai-note { background: #ede7f6; color: #4527a0; border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; font-size: 14px; }
+.sticky { position: sticky; top: 88px; }
+.pbar { margin-bottom: 8px; }
+.valid, .invalid { display: flex; align-items: center; gap: 6px; font-weight: 500; margin-bottom: 8px; }
+.valid { color: #1b6e35; }
+.invalid { color: #8a4b00; }
+.rule-label { margin: 8px 0 4px; color: var(--muted); font-size: 13px; }
+.rule { font-size: 16px; line-height: 1.6; background: #f4f8ff; border-radius: 8px; padding: 10px 12px; margin: 0 0 12px; }
+.tech { margin-bottom: 12px; box-shadow: none; border: 1px solid var(--border); }
+.save-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 8px; }
+
+@media (max-width: 960px) {
+  .layout { grid-template-columns: 1fr; }
+  .sticky { position: static; }
+}

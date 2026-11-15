@@ -1,0 +1,139 @@
+@if (runLoading()) {
+  <app-state-panel kind="loading" message="טוען תוצאות..." />
+} @else if (runError()) {
+  <app-state-panel kind="error" [message]="runError()!" (retry)="loadRun()" />
+} @else if (run(); as r) {
+  <div class="page-header">
+    <div>
+      <h1>{{ validation()?.name ?? 'תוצאות בדיקה' }}</h1>
+      @if (validation()?.description) { <p class="subtitle">{{ validation()!.description }}</p> }
+    </div>
+    <div class="actions">
+      <a mat-button routerLink="/"><mat-icon>arrow_forward</mat-icon> לרשימה</a>
+      <a mat-stroked-button [routerLink]="['/validations', r.validationId, 'edit']"><mat-icon>edit</mat-icon> עריכה</a>
+      <button mat-flat-button (click)="rerun()" [disabled]="rerunning()"><mat-icon>replay</mat-icon> הרצה מחדש</button>
+    </div>
+  </div>
+  @if (rerunning()) { <mat-progress-bar mode="indeterminate" class="pbar" /> }
+
+  <!-- Summary -->
+  <div class="summary">
+    <div class="stat main" [class.ok]="r.status === 'Succeeded' && !r.violationCount">
+      <div class="stat-label">רשומות שגויות</div>
+      <div class="stat-value">{{ r.violationCount != null ? (r.violationCount | number) : '—' }}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">סטטוס</div>
+      <div class="stat-value small"><app-status-badge [status]="r.status" [violations]="r.violationCount" /></div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">זמן ריצה</div>
+      <div class="stat-value small">{{ r.durationMs != null ? (r.durationMs | number) + ' ms' : '—' }}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">מועד הריצה</div>
+      <div class="stat-value small">
+        @if (history().length > 1) {
+          <mat-select [value]="r.runId" (selectionChange)="openRun($event.value)" class="history" matTooltip="היסטוריית ריצות">
+            @for (h of history(); track h.runId) {
+              <mat-option [value]="h.runId">{{ h.startedAt | date: 'dd/MM/yyyy HH:mm:ss' }} · {{ h.status === 'Succeeded' ? (h.violationCount + ' הפרות') : 'נכשלה' }}</mat-option>
+            }
+          </mat-select>
+        } @else {
+          {{ r.startedAt | date: 'dd/MM/yyyy HH:mm:ss' }}
+        }
+      </div>
+    </div>
+  </div>
+
+  @if (r.status === 'Failed') {
+    <app-state-panel kind="error" [message]="r.errorMessage ?? 'הריצה נכשלה'" (retry)="rerun()" />
+  } @else {
+    @if (r.isTruncated) {
+      <div class="warning"><mat-icon inline>warning_amber</mat-icon>
+        נמצאו {{ r.violationCount | number }} הפרות. נשמרו לצפייה {{ r.storedResultCount | number }} הראשונות.
+      </div>
+    }
+
+    <!-- Filters -->
+    <div class="card filters">
+      <div class="toolbar-row">
+        <mat-form-field appearance="outline" class="grow" subscriptSizing="dynamic">
+          <mat-label>חיפוש ברשומות, בערכים ובסיבות</mat-label>
+          <mat-icon matPrefix>search</mat-icon>
+          <input matInput [(ngModel)]="search" (ngModelChange)="onSearch($event)" />
+        </mat-form-field>
+        @if (filtered()) {
+          <button mat-button (click)="clearFilters()"><mat-icon>filter_alt_off</mat-icon> ניקוי סינון</button>
+        }
+      </div>
+      @if (r.conditions.length > 1) {
+        <div class="reason-filter">
+          <span class="muted">סינון לפי סיבת כשל:</span>
+          <mat-chip-listbox [value]="conditionFilter()" (change)="setCondition($event.value)" aria-label="סינון לפי סיבה">
+            @for (c of r.conditions; track c.id) {
+              <mat-chip-option [value]="c.id">{{ c.description }}</mat-chip-option>
+            }
+          </mat-chip-listbox>
+        </div>
+      }
+    </div>
+
+    <!-- Records -->
+    @if (resultsLoading() && !results()) {
+      <app-state-panel kind="loading" message="טוען רשומות..." />
+    } @else if (resultsError()) {
+      <app-state-panel kind="error" [message]="resultsError()!" (retry)="loadResults()" />
+    } @else if (results(); as res) {
+      @if (res.totalCount === 0) {
+        @if (filtered()) {
+          <app-state-panel kind="empty" icon="search_off" message="אין רשומות התואמות לסינון" />
+        } @else {
+          <app-state-panel kind="empty" icon="verified" message="מצוין! לא נמצאו רשומות שגויות." />
+        }
+      } @else {
+        @if (resultsLoading()) { <mat-progress-bar mode="indeterminate" /> }
+        <div class="table-wrap">
+          <table mat-table [dataSource]="res.items">
+            <ng-container matColumnDef="row">
+              <th mat-header-cell *matHeaderCellDef>#</th>
+              <td mat-cell *matCellDef="let item" class="muted">{{ item.rowNumber }}</td>
+            </ng-container>
+            <ng-container matColumnDef="record">
+              <th mat-header-cell *matHeaderCellDef>רשומה</th>
+              <td mat-cell *matCellDef="let item" class="record">{{ item.recordTitle }}</td>
+            </ng-container>
+            @for (col of r.columns; track col.fieldPath; let i = $index) {
+              <ng-container [matColumnDef]="'col' + i">
+                <th mat-header-cell *matHeaderCellDef>{{ col.label }}</th>
+                <td mat-cell *matCellDef="let item" [class.empty-value]="!item.values[col.fieldPath]">
+                  {{ item.values[col.fieldPath] || 'ריק' }}
+                </td>
+              </ng-container>
+            }
+            <ng-container matColumnDef="reasons">
+              <th mat-header-cell *matHeaderCellDef>סיבת הכשל</th>
+              <td mat-cell *matCellDef="let item" class="reasons">
+                <ul>
+                  @for (reason of item.reasons; track reason.conditionId) {
+                    <li [class.highlight]="reason.conditionId === conditionFilter()">{{ reason.message }}</li>
+                  }
+                </ul>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns()"></tr>
+          </table>
+        </div>
+        <mat-paginator [length]="res.totalCount" [pageIndex]="page()" [pageSize]="pageSize()"
+                       [pageSizeOptions]="[10, 25, 50, 100]" (page)="onPage($event)" showFirstLastButtons />
+      }
+    }
+
+    <mat-expansion-panel class="tech">
+      <mat-expansion-panel-header><mat-panel-title>פרטים טכניים: השאילתה שנוצרה והורצה</mat-panel-title></mat-expansion-panel-header>
+      <p class="muted">שאילתת SELECT בלבד, נוצרה אוטומטית מהגדרת הבדיקה. כל הערכים הועברו כפרמטרים, והרצה התבצעה עם משתמש בעל הרשאת קריאה בלבד.</p>
+      <pre class="sql">{{ r.generatedSql }}</pre>
+    </mat-expansion-panel>
+  }
+}

@@ -1,0 +1,15 @@
+.group { display: flex; flex-direction: column; gap: 6px; }
+.group.nested {
+  border: 1px dashed #9db4d6; border-inline-start: 4px solid #4a7bc0; border-radius: 10px;
+  padding: 10px; background: #f6f9ff;
+}
+.group.nested.or { border-inline-start-color: #8e5bd0; background: #faf6ff; border-color: #c7b2e6; }
+.group-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.remove-group { margin-inline-start: auto; }
+.connector {
+  align-self: flex-start; font-size: 12px; font-weight: 600; color: #4a7bc0;
+  background: #e8f0fe; border-radius: 10px; padding: 1px 10px; margin-inline-start: 16px;
+}
+.or > .connector { color: #7b45bd; background: #f0e7fb; }
+.empty { padding: 8px; font-size: 14px; }
+.group-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }

@@ -1,0 +1,13 @@
+.row {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start;
+  background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 10px;
+}
+.row.invalid { border-color: #e57373; }
+.field-select { flex: 1 1 220px; }
+.op-select { flex: 0 1 180px; }
+.value { flex: 1 1 160px; }
+.value.small { flex: 0 1 130px; }
+.value.wide { flex: 2 1 240px; }
+.mode { align-self: center; }
+.remove { margin-inline-start: auto; align-self: center; }
+.row-error { color: #a4262c; font-size: 13px; margin: 4px 8px 0; }

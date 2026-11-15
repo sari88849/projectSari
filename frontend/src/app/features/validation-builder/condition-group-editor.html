@@ -1,0 +1,35 @@
+<div class="group" [class.nested]="depth() > 0" [class.or]="group().logic === 'Or'">
+  <div class="group-header">
+    <mat-button-toggle-group [value]="group().logic" (change)="setLogic($event.value)" hideSingleSelectionIndicator>
+      <mat-button-toggle value="And" matTooltip="רשומה שגויה אם כל התנאים מתקיימים">כל התנאים (וגם)</mat-button-toggle>
+      <mat-button-toggle value="Or" matTooltip="רשומה שגויה אם לפחות תנאי אחד מתקיים">לפחות אחד (או)</mat-button-toggle>
+    </mat-button-toggle-group>
+    @if (depth() > 0) {
+      <button mat-icon-button class="remove-group" (click)="remove.emit()" matTooltip="הסרת הקבוצה"><mat-icon>delete_outline</mat-icon></button>
+    }
+  </div>
+
+  @for (child of group().children; track child.id; let i = $index; let last = $last) {
+    @if (child.type === 'group') {
+      <app-condition-group-editor
+        [group]="asGroup(child)" [root]="root()" [fields]="fields()" [rootLabel]="rootLabel()" [errors]="errors()"
+        [depth]="depth() + 1" (changed)="changed.emit()" (remove)="removeChild(i)" />
+    } @else {
+      <app-condition-editor
+        [condition]="asCondition(child)" [fields]="fields()" [rootLabel]="rootLabel()" [errors]="errors().get(child.id) ?? []"
+        (changed)="changed.emit()" (remove)="removeChild(i)" />
+    }
+    @if (!last) { <div class="connector">{{ logicLabel() }}</div> }
+  }
+
+  @if (group().children.length === 0) {
+    <div class="empty muted">אין תנאים בקבוצה. הוסיפו תנאי.</div>
+  }
+
+  <div class="group-actions">
+    <button mat-stroked-button (click)="addCondition()"><mat-icon>add</mat-icon> הוספת תנאי</button>
+    @if (canNest()) {
+      <button mat-button (click)="addGroup()"><mat-icon>account_tree</mat-icon> הוספת קבוצת תנאים</button>
+    }
+  </div>
+</div>

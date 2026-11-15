@@ -1,0 +1,83 @@
+<div class="row" [class.invalid]="errors().length > 0">
+  <mat-form-field appearance="outline" class="field-select" subscriptSizing="dynamic">
+    <mat-label>שדה</mat-label>
+    <mat-select [ngModel]="condition().field" (ngModelChange)="onFieldChange($event)" panelWidth="">
+      @for (g of fieldGroups(); track g.label) {
+        <mat-optgroup [label]="g.label">
+          @for (f of g.fields; track f.path) {
+            <mat-option [value]="f.path" [matTooltip]="f.description ?? ''" matTooltipPosition="before">{{ f.fieldLabel }}</mat-option>
+          }
+        </mat-optgroup>
+      }
+    </mat-select>
+    @if (field(); as f) { <mat-hint>{{ f.label }}</mat-hint> }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="op-select" subscriptSizing="dynamic">
+    <mat-label>תנאי</mat-label>
+    <mat-select [ngModel]="condition().operator" (ngModelChange)="onOperatorChange($event)" [disabled]="!field()">
+      @for (op of operators(); track op.operator) {
+        <mat-option [value]="op.operator">{{ opLabel(op) }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  @if (field() && operator(); as op) {
+    @switch (op.shape) {
+      @case ('Single') {
+        @if (op.allowsFieldOperand) {
+          <mat-button-toggle-group class="mode" [value]="compareMode()" (change)="setCompareMode($event.value)" hideSingleSelectionIndicator>
+            <mat-button-toggle value="value" matTooltip="השוואה לערך קבוע">ערך</mat-button-toggle>
+            <mat-button-toggle value="field" matTooltip="השוואה לשדה אחר">שדה</mat-button-toggle>
+          </mat-button-toggle-group>
+        }
+        @if (compareMode() === 'field') {
+          <mat-form-field appearance="outline" class="value" subscriptSizing="dynamic">
+            <mat-label>שדה להשוואה</mat-label>
+            <mat-select [ngModel]="condition().value?.field" (ngModelChange)="setCompareField($event)">
+              @for (g of comparableFieldGroups(); track g.label) {
+                <mat-optgroup [label]="g.label">
+                  @for (f of g.fields; track f.path) { <mat-option [value]="f.path">{{ f.fieldLabel }}</mat-option> }
+                </mat-optgroup>
+              }
+            </mat-select>
+          </mat-form-field>
+        } @else if (field()!.dataType === 'Boolean') {
+          <mat-form-field appearance="outline" class="value" subscriptSizing="dynamic">
+            <mat-label>ערך</mat-label>
+            <mat-select [ngModel]="condition().value?.value" (ngModelChange)="setValue('value', $event)">
+              <mat-option [value]="true">{{ field()!.trueLabel ?? 'כן' }}</mat-option>
+              <mat-option [value]="false">{{ field()!.falseLabel ?? 'לא' }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        } @else {
+          <mat-form-field appearance="outline" class="value" subscriptSizing="dynamic">
+            <mat-label>ערך</mat-label>
+            <input matInput [type]="inputType()" [ngModel]="rawValue('value')" (ngModelChange)="setValue('value', $event)" />
+          </mat-form-field>
+        }
+      }
+      @case ('Range') {
+        <mat-form-field appearance="outline" class="value small" subscriptSizing="dynamic">
+          <mat-label>מ-</mat-label>
+          <input matInput [type]="inputType()" [ngModel]="rawValue('value')" (ngModelChange)="setValue('value', $event)" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="value small" subscriptSizing="dynamic">
+          <mat-label>עד</mat-label>
+          <input matInput [type]="inputType()" [ngModel]="rawValue('valueTo')" (ngModelChange)="setValue('valueTo', $event)" />
+        </mat-form-field>
+      }
+      @case ('List') {
+        <mat-form-field appearance="outline" class="value wide" subscriptSizing="dynamic">
+          <mat-label>ערכים (מופרדים בפסיק)</mat-label>
+          <input matInput [ngModel]="listText()" (ngModelChange)="setList($event)" />
+        </mat-form-field>
+      }
+    }
+  }
+
+  <button mat-icon-button class="remove" (click)="remove.emit()" matTooltip="הסרת התנאי"><mat-icon>close</mat-icon></button>
+</div>
+@for (e of errors(); track $index) {
+  <div class="row-error"><mat-icon inline>error_outline</mat-icon> {{ e }}</div>
+}

@@ -1,0 +1,104 @@
+<div class="page-header">
+  <div>
+    <h1>יצירת בדיקה בעזרת AI</h1>
+    <p class="subtitle">תארו במילים את הנתונים השגויים שתרצו לאתר. ה-AI יציע הגדרת בדיקה, שתוכלו לבדוק ולאשר לפני הרצה.</p>
+  </div>
+</div>
+
+<section class="card">
+  <mat-form-field appearance="outline" class="full">
+    <mat-label>תיאור הבדיקה בשפה חופשית</mat-label>
+    <textarea matInput [(ngModel)]="prompt" rows="3" maxlength="1000"
+              placeholder="לדוגמה: עובדים מתחת לגיל 18 עם שכר חודשי מעל 15000" (keydown.control.enter)="propose()"></textarea>
+    <mat-hint align="end">{{ prompt.length }}/1000</mat-hint>
+  </mat-form-field>
+
+  <div class="toolbar-row">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>ישות</mat-label>
+      <mat-select [(ngModel)]="rootEntity">
+        <mat-option value="">זיהוי אוטומטי</mat-option>
+        @for (e of metadata.entities(); track e.key) { <mat-option [value]="e.key">{{ e.displayNamePlural }}</mat-option> }
+      </mat-select>
+    </mat-form-field>
+    <button mat-flat-button (click)="propose()" [disabled]="loading() || !prompt.trim()">
+      <mat-icon>auto_awesome</mat-icon> הצעת בדיקה
+    </button>
+  </div>
+
+  <div class="examples">
+    <span class="muted">דוגמאות:</span>
+    <mat-chip-set>
+      @for (ex of examples; track ex) { <mat-chip (click)="useExample(ex)">{{ ex }}</mat-chip> }
+    </mat-chip-set>
+  </div>
+</section>
+
+@if (loading()) {
+  <app-state-panel kind="loading" message="ה-AI מנתח את הבקשה..." />
+} @else if (error()) {
+  <app-state-panel kind="error" [message]="error()!" (retry)="propose()" />
+} @else if (proposal(); as p) {
+  <section class="card proposal" [class.invalid]="!p.isValid">
+    <div class="proposal-header">
+      <h2>
+        @if (p.isValid) { <mat-icon class="ok">task_alt</mat-icon> הצעת בדיקה לאישור }
+        @else { <mat-icon class="bad">help_outline</mat-icon> לא ניתן היה ליצור בדיקה תקינה }
+      </h2>
+      @if (p.confidence != null) {
+        <span class="confidence" [title]="'רמת ביטחון של ה-AI'">ביטחון: {{ p.confidence | percent }}</span>
+      }
+    </div>
+
+    @if (p.isValid) {
+      <p class="rule-label">רשומה של <strong>{{ metadata.entityLabel(p.rootEntity!) }}</strong> תסומן כשגויה כאשר:</p>
+      <p class="rule">{{ p.ruleText }}</p>
+
+      @if (p.conditions.length > 1) {
+        <ul class="conditions">
+          @for (c of p.conditions; track c.id) { <li>{{ c.description }}</li> }
+        </ul>
+      }
+
+      <div class="toolbar-row">
+        <mat-form-field appearance="outline" class="grow">
+          <mat-label>שם הבדיקה</mat-label>
+          <input matInput [(ngModel)]="name" maxlength="200" required />
+        </mat-form-field>
+      </div>
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>תיאור</mat-label>
+        <textarea matInput [(ngModel)]="description" rows="2" maxlength="1000"></textarea>
+      </mat-form-field>
+    } @else {
+      <ul class="error-list">
+        @for (e of p.errors; track $index) { <li>{{ e }}</li> }
+      </ul>
+      <p class="muted">נסו לנסח מחדש בעזרת שמות השדות כפי שהם מופיעים בבונה הבדיקות, או בנו את הבדיקה ידנית.</p>
+    }
+
+    @if (p.notes.length) {
+      <div class="notes">
+        @for (n of p.notes; track $index) { <div><mat-icon inline>info</mat-icon> {{ n }}</div> }
+      </div>
+    }
+
+    <div class="actions">
+      @if (p.isValid) {
+        <button mat-flat-button (click)="approve(true)" [disabled]="saving() || !name.trim()"><mat-icon>play_arrow</mat-icon> אישור, שמירה והרצה</button>
+        <button mat-stroked-button (click)="approve(false)" [disabled]="saving() || !name.trim()"><mat-icon>save</mat-icon> אישור ושמירה</button>
+      }
+      @if (p.definition) {
+        <button mat-button (click)="editInBuilder()"><mat-icon>tune</mat-icon> עריכה בבונה הבדיקות</button>
+      }
+      <button mat-button (click)="proposal.set(null)"><mat-icon>close</mat-icon> ביטול</button>
+    </div>
+    @if (saving()) { <mat-progress-bar mode="indeterminate" /> }
+
+    <mat-expansion-panel class="tech">
+      <mat-expansion-panel-header><mat-panel-title>פרטים טכניים: תשובת ה-AI (JSON) · {{ p.provider }}</mat-panel-title></mat-expansion-panel-header>
+      <p class="muted">התשובה המובנית שהתקבלה מספק ה-AI, לפני התרגום להגדרת בדיקה ולפני האימות מול קטלוג המטא-דאטה.</p>
+      <pre class="sql">{{ prettyJson(p.rawResponse) }}</pre>
+    </mat-expansion-panel>
+  </section>
+}

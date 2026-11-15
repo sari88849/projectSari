@@ -1,0 +1,103 @@
+<div class="page-header">
+  <div>
+    <h1>הבדיקות שלי</h1>
+    <p class="subtitle">בדיקות נתונים שמורות, סטטוס הריצה האחרונה ומספר ההפרות שנמצאו</p>
+  </div>
+  <div class="actions">
+    <a mat-stroked-button routerLink="/ai"><mat-icon>auto_awesome</mat-icon> יצירה בעזרת AI</a>
+    <a mat-flat-button routerLink="/validations/new"><mat-icon>add</mat-icon> בדיקה חדשה</a>
+  </div>
+</div>
+
+<div class="card filters">
+  <div class="toolbar-row">
+    <mat-form-field appearance="outline" class="grow" subscriptSizing="dynamic">
+      <mat-label>חיפוש לפי שם או תיאור</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput [(ngModel)]="search" (ngModelChange)="onSearch($event)" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>ישות</mat-label>
+      <mat-select [(ngModel)]="entity" (selectionChange)="load()">
+        <mat-option value="">כל הישויות</mat-option>
+        @for (e of metadata.entities(); track e.key) {
+          <mat-option [value]="e.key">{{ e.displayNamePlural }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+</div>
+
+@if (loading() && items().length === 0) {
+  <app-state-panel kind="loading" message="טוען בדיקות..." />
+} @else if (error()) {
+  <app-state-panel kind="error" [message]="error()!" (retry)="load()" />
+} @else if (items().length === 0) {
+  <app-state-panel kind="empty" icon="rule" [message]="hasFilter() ? 'לא נמצאו בדיקות התואמות לחיפוש' : 'עדיין לא הוגדרו בדיקות'">
+    @if (!hasFilter()) {
+      <a mat-flat-button routerLink="/validations/new">יצירת בדיקה ראשונה</a>
+    }
+  </app-state-panel>
+} @else {
+  <div class="table-wrap">
+    <table mat-table [dataSource]="items()">
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>שם הבדיקה</th>
+        <td mat-cell *matCellDef="let v">
+          <div class="name">
+            {{ v.name }}
+            @if (v.source === 'AI') { <span class="ai-tag" matTooltip="נוצרה בעזרת AI">AI</span> }
+          </div>
+          @if (v.description) { <div class="desc">{{ v.description }}</div> }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="entity">
+        <th mat-header-cell *matHeaderCellDef>ישות</th>
+        <td mat-cell *matCellDef="let v">{{ metadata.entityLabel(v.rootEntityKey) }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>סטטוס אחרון</th>
+        <td mat-cell *matCellDef="let v">
+          <app-status-badge [status]="v.lastRunStatus" [violations]="v.lastRunViolationCount" />
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="violations">
+        <th mat-header-cell *matHeaderCellDef>הפרות</th>
+        <td mat-cell *matCellDef="let v" class="count" [class.has]="(v.lastRunViolationCount ?? 0) > 0">
+          {{ v.lastRunViolationCount != null ? (v.lastRunViolationCount | number) : '—' }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="lastRun">
+        <th mat-header-cell *matHeaderCellDef>ריצה אחרונה</th>
+        <td mat-cell *matCellDef="let v" class="muted">
+          @if (v.lastRunStartedAt) {
+            {{ v.lastRunStartedAt | date: 'dd/MM/yyyy HH:mm' }}
+            @if (v.lastRunDurationMs != null) { <span class="duration">({{ v.lastRunDurationMs | number }} ms)</span> }
+          } @else { — }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let v" class="actions-cell">
+          <button mat-flat-button (click)="execute(v)" [disabled]="isRunning(v.id)" matTooltip="הרצת הבדיקה עכשיו">
+            @if (isRunning(v.id)) { <mat-spinner diameter="18" /> } @else { <mat-icon>play_arrow</mat-icon> }
+            הרצה
+          </button>
+          <a mat-icon-button [routerLink]="['/runs', v.lastRunId]" [disabled]="!v.lastRunId" matTooltip="תוצאות הריצה האחרונה">
+            <mat-icon>table_view</mat-icon>
+          </a>
+          <a mat-icon-button [routerLink]="['/validations', v.id, 'edit']" matTooltip="עריכה"><mat-icon>edit</mat-icon></a>
+          <button mat-icon-button (click)="remove(v)" matTooltip="מחיקה"><mat-icon>delete_outline</mat-icon></button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns"></tr>
+    </table>
+  </div>
+}

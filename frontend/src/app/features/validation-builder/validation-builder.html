@@ -1,0 +1,112 @@
+<div class="page-header">
+  <div>
+    <h1>{{ isEdit() ? 'עריכת בדיקה' : 'בדיקה חדשה' }}</h1>
+    <p class="subtitle">הגדירו את התנאי שמזהה רשומות <strong>שגויות</strong>. אין צורך בידע ב-SQL.</p>
+  </div>
+  <div class="actions">
+    <a mat-button routerLink="/"><mat-icon>arrow_forward</mat-icon> חזרה לרשימה</a>
+  </div>
+</div>
+
+@if (loading()) {
+  <app-state-panel kind="loading" message="טוען את הבדיקה..." />
+} @else if (loadError()) {
+  <app-state-panel kind="error" [message]="loadError()!" (retry)="loadValidation(+id()!)" />
+} @else {
+  <div class="layout">
+    <div class="main">
+      <section class="card">
+        <h2>1. פרטי הבדיקה</h2>
+        @if (source === 'AI') {
+          <div class="ai-note"><mat-icon inline>auto_awesome</mat-icon> הבדיקה נוצרה מהצעת AI. בדקו את התנאים לפני השמירה.</div>
+        }
+        <div class="toolbar-row">
+          <mat-form-field appearance="outline" class="grow">
+            <mat-label>שם הבדיקה</mat-label>
+            <input matInput [(ngModel)]="name" maxlength="200" required />
+            @if (submitted() && !name.trim()) { <mat-error>חובה להזין שם</mat-error> }
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>על איזו ישות הבדיקה?</mat-label>
+            <mat-select [ngModel]="definition().rootEntity" (ngModelChange)="onEntityChange($event)" required>
+              @for (e of metadata.entities(); track e.key) {
+                <mat-option [value]="e.key">{{ e.displayNamePlural }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>תיאור (לא חובה)</mat-label>
+          <textarea matInput [(ngModel)]="description" rows="2" maxlength="1000"></textarea>
+        </mat-form-field>
+      </section>
+
+      <section class="card">
+        <h2>2. תנאים לזיהוי רשומה שגויה</h2>
+        @if (!definition().rootEntity) {
+          <div class="muted">בחרו ישות כדי להתחיל להגדיר תנאים.</div>
+        } @else {
+          @if (fields().length === 0) { <mat-progress-bar mode="indeterminate" /> }
+          <app-condition-group-editor
+            [group]="definition().condition" [root]="definition().condition" [fields]="fields()"
+            [rootLabel]="rootLabel()" [errors]="errorsByNode()" (changed)="onChanged()" />
+        }
+      </section>
+
+      @if (definition().rootEntity) {
+        <section class="card">
+          <h2>3. שדות להצגה בתוצאות <span class="muted small">(לא חובה)</span></h2>
+          <mat-form-field appearance="outline" class="full" subscriptSizing="dynamic">
+            <mat-label>שדות נוספים להצגה</mat-label>
+            <mat-select multiple [ngModel]="definition().displayFields ?? []" (ngModelChange)="setDisplayFields($event)">
+              @for (f of fields(); track f.path) { <mat-option [value]="f.path">{{ f.label }}</mat-option> }
+            </mat-select>
+            <mat-hint>שדות המשמשים בתנאים מוצגים תמיד בתוצאות</mat-hint>
+          </mat-form-field>
+        </section>
+      }
+    </div>
+
+    <aside class="side">
+      <section class="card sticky">
+        <h2>תצוגה מקדימה</h2>
+        @if (previewLoading()) { <mat-progress-bar mode="indeterminate" class="pbar" /> }
+        @if (!definition().rootEntity) {
+          <div class="muted">הכלל יוצג כאן בשפה פשוטה.</div>
+        } @else if (preview(); as p) {
+          @if (p.isValid) {
+            <div class="valid"><mat-icon>check_circle</mat-icon> ההגדרה תקינה</div>
+            <p class="rule-label">רשומה תסומן כשגויה כאשר:</p>
+            <p class="rule">{{ p.description }}</p>
+            <mat-expansion-panel class="tech">
+              <mat-expansion-panel-header><mat-panel-title>פרטים טכניים (SQL שנוצר)</mat-panel-title></mat-expansion-panel-header>
+              <p class="muted small">השאילתה נוצרת אוטומטית, כל הערכים מועברים כפרמטרים.</p>
+              <pre class="sql">{{ p.generatedSql }}</pre>
+            </mat-expansion-panel>
+          } @else {
+            <div class="invalid"><mat-icon>info</mat-icon> יש להשלים את ההגדרה</div>
+            <ul class="error-list">
+              @for (e of p.errors; track $index) { <li>{{ e.message }}</li> }
+            </ul>
+          }
+        }
+        @if (generalErrors().length && !preview()?.errors?.length) {
+          <ul class="error-list">
+            @for (e of generalErrors(); track $index) { <li>{{ e }}</li> }
+          </ul>
+        }
+
+        <div class="save-actions">
+          <button mat-flat-button (click)="save(true)" [disabled]="!canSave()">
+            <mat-icon>play_arrow</mat-icon> שמירה והרצה
+          </button>
+          <button mat-stroked-button (click)="save(false)" [disabled]="!canSave()">
+            <mat-icon>save</mat-icon> שמירה
+          </button>
+        </div>
+        @if (saving()) { <mat-progress-bar mode="indeterminate" /> }
+        <div class="muted small">{{ conditionCount() }} תנאים</div>
+      </section>
+    </aside>
+  </div>
+}

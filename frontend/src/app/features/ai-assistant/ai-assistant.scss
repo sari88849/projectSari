@@ -1,0 +1,16 @@
+.full { width: 100%; }
+.examples { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.examples mat-chip { cursor: pointer; }
+.proposal { border-color: #b9cdf0; }
+.proposal.invalid { border-color: #f0d3a8; }
+.proposal-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.proposal-header h2 { display: flex; align-items: center; gap: 8px; }
+.ok { color: #1b6e35; }
+.bad { color: #8a4b00; }
+.confidence { background: #eef3fb; color: #1f4e8c; border-radius: 12px; padding: 2px 10px; font-size: 13px; }
+.rule-label { margin: 4px 0; color: var(--muted); }
+.rule { font-size: 18px; line-height: 1.6; background: #f4f8ff; border-radius: 8px; padding: 12px 14px; margin: 0 0 12px; }
+.conditions { margin: 0 0 16px; color: #344255; }
+.notes { background: #f6f7f9; border-radius: 8px; padding: 8px 12px; color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.tech { box-shadow: none; border: 1px solid var(--border); }

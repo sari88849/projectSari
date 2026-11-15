@@ -1,5 +1,7 @@
 # Architecture
 
+> A short version is in [OVERVIEW.md](OVERVIEW.md). Terminology: the assignment's *control* (בקרה) is called a **validation** in the code.
+
 ## 1. Overview
 
 ```mermaid
@@ -67,6 +69,8 @@ The projects depend in one direction: **Api → Infrastructure → Core**. Core 
 
 A database user, `validation_reader` (created without a login), has `SELECT` on schema `hr` only.
 
+The scripts need SQL Server 2016 or later (`OPENJSON`, `ISJSON`, `DROP … IF EXISTS`). They were verified on SQL Server 2019 and LocalDB 2016.
+
 ## 3. The validation definition
 
 A validation is **data, not code**. It is a JSON tree that describes the condition identifying *invalid* records:
@@ -90,6 +94,7 @@ A validation is **data, not code**. It is a JSON tree that describes the conditi
 - **Operands** come in three kinds: `constant` (a fixed value), `list` (for `In`) and `field`, which compares against another field, including one on a related entity.
 - **Operators** (12): `Equals`, `NotEquals`, `GreaterThan`, `GreaterThanOrEqual`, `LessThan`, `LessThanOrEqual`, `Between`, `In`, `Contains`, `StartsWith`, `IsEmpty`, `IsNotEmpty`. Each operator declares the data types it supports and its operand shape.
 - **Parsing is strict.** Unknown properties, unknown node types, unknown or numeric enum values, and a root that is not a group are all rejected.
+- **A missing operator is not defaulted.** `Condition.Operator` is nullable. An operator not chosen yet (e.g. a new row in the builder) is reported by the validator on that row ("יש לבחור תנאי", choose an operator); it is never silently read as `Equals`.
 
 Adding a validation means storing a new JSON document; no C# changes are needed. Adding an entity, field or relationship means inserting rows in `meta.*`; again no C# changes are needed (see [EXAMPLES.md §4](EXAMPLES.md#4-adding-a-new-entity-without-code)).
 

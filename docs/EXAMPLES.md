@@ -1,6 +1,6 @@
-# Example validations
+# Example validations (controls)
 
-All examples are stored as data in `app.Validations` (see `db/07_seed_validations.sql`). They run through the same generic engine; none of them has dedicated code. Expected results refer to the seed data in `db/05_seed_business_data.sql`. They are checked three times: by `db/99_verify.sql` (hand-written SQL), by `ExampleValidationsTests` (the generated SQL against SQL Server), and through the AI flow in `AiEndToEndTests`.
+These are the assignment's configurable, executable *controls* (בקרות), called **validations** in the implementation. All examples are stored as data in `app.Validations` (see `db/07_seed_validations.sql`). They run through the same generic engine; none of them has dedicated code. Expected results refer to the seed data in `db/05_seed_business_data.sql`. They are checked by `db/99_verify.sql` (hand-written SQL) and by `ExampleValidationsTests` (the generated SQL against SQL Server). V1–V5 are also produced from Hebrew text through the AI flow in `AiEndToEndTests`, which checks that they return the same records.
 
 ## 1. The four required examples
 

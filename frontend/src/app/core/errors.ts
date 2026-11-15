@@ -7,6 +7,11 @@ export function errorMessage(error: unknown): string {
     if (error.status === 0) return 'לא ניתן להתחבר לשרת. ודאו שה-API פועל.';
     const title = error.error?.title as string | undefined;
     if (title) return title;
+    // The API always answers errors with a problem-details JSON body. A 5xx without one comes from the
+    // dev-server proxy, which means the API itself is not reachable (not running on port 5080).
+    if (error.status >= 500 && (error.error === null || typeof error.error !== 'object')) {
+      return 'שרת ה-API אינו זמין. ודאו שה-API פועל (http://localhost:5080) ונסו שוב.';
+    }
     if (error.status === 404) return 'הפריט המבוקש לא נמצא';
     if (error.status >= 500) return 'אירעה שגיאה בשרת. נסו שוב מאוחר יותר.';
     return 'הבקשה נכשלה';

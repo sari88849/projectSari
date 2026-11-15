@@ -62,7 +62,11 @@ If you use a different server, also update `ConnectionStrings:ValidationDb` in `
 ```powershell
 .\scripts\start-dev.ps1
 ```
-This opens three windows: the API on http://localhost:5080, the AI mock on http://localhost:5005, and Angular on **http://localhost:4200**. The first run executes `npm install` automatically.
+From Explorer, double-click **`scripts\start-dev.cmd`**. Double-clicking the `.ps1` file only opens it in Notepad.
+
+This opens three windows: the API on http://localhost:5080, the AI mock on http://localhost:5005, and Angular on **http://localhost:4200**. The first run executes `npm install` automatically. The script refuses to start if one of these ports is already taken by an earlier run, and shows which process holds it.
+
+**Troubleshooting.** If the page shows "שרת ה-API אינו זמין" (API unavailable), or `/api/...` calls fail with HTTP 500 and an empty `text/plain` body, the Angular proxy cannot reach the API. Check that the API window shows `Now listening on: http://localhost:5080`, and that http://localhost:5080/api/health returns `{"status":"ok"}`. Real API errors always return a JSON problem-details body with a Hebrew title.
 
 ### 3.3 Or start each part manually
 ```powershell

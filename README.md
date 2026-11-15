@@ -46,8 +46,8 @@ The project was developed and verified on Windows 10 with the versions below.
 | Requirement | Needed | Verified with |
 |---|---|---|
 | SQL Server | **2016 or later**, Windows authentication | SQL Server 2019 Enterprise (default instance `.`); **LocalDB 2016** (`(localdb)\MSSQLLocalDB`, Express engine): setup, self-check and all 42 integration tests pass. A named SQL Express *instance* was not available for testing. |
-| `sqlcmd` | Any version on PATH | sqlcmd 15 (ODBC Driver 17). The setup script passes `-C` (trust server certificate), which sqlcmd 18 / go-sqlcmd need for a local server. Those newer versions were **not** tested here. |
-| .NET SDK | **10.0.404 or later** (`backend/global.json`: `10.0.404` with `rollForward: latestFeature`) | 10.0.404. An older .NET 10 SDK band (10.0.1xx–3xx) is rejected by `global.json`; install the latest .NET 10 SDK. |
+| `sqlcmd` | ODBC-based sqlcmd or the newer go-sqlcmd, on PATH | ODBC sqlcmd 15 and **go-sqlcmd v1.10.0**: setup and self-check pass with both. The script always passes `-C` (trust the server certificate, needed by sqlcmd 18, which encrypts by default) and passes `-f 65001` only to clients that support it. go-sqlcmd has no `-f` and reads UTF-8 natively. sqlcmd 18 (ODBC Driver 18) itself was not tested. |
+| .NET SDK | **Any .NET 10 SDK** (`backend/global.json`: `10.0.100` with `rollForward: latestFeature`) | 10.0.404 (installed) and 10.0.115 (oldest feature band). Build with no warnings, and all 80 unit + 42 integration tests pass with both. |
 | Node.js | 20.19+, 22.12+ or 24+ (Angular 21 requirement), with npm | 22.23.5 |
 | Python | 3.7+, available as `python` or `py -3` | 3.7.9. No packages are needed. |
 | Browser | Any modern browser | Chrome |
@@ -68,6 +68,14 @@ The project was developed and verified on Windows 10 with the versions below.
 | Ports | API `backend/.../Properties/launchSettings.json` (5080); Angular proxy `frontend/proxy.conf.json` (→ 5080); AI mock `--port` (5005) | 5080 / 4200 / 5005 |
 | Test database | Environment variable `VALIDATION_TEST_DB` (full connection string) | same as the API default |
 | Python for tests | Environment variable `PYTHON` (executable used by the AI end-to-end tests) | `python` |
+
+**go-sqlcmd and LocalDB:** go-sqlcmd cannot resolve the `(localdb)\MSSQLLocalDB` server name ("no named pipe instance matching …"). Pass the instance's named pipe instead. It changes each time LocalDB starts, so read it first:
+```powershell
+sqllocaldb start MSSQLLocalDB
+$pipe = ((sqllocaldb info MSSQLLocalDB | Select-String 'Instance pipe name') -split ': ', 2)[1]   # np:\\.\pipe\LOCALDB#...\tsql\query
+.\db\setup-database.ps1 -Server $pipe
+```
+The ODBC-based sqlcmd accepts `(localdb)\MSSQLLocalDB` directly. The API and tests (Microsoft.Data.SqlClient) always accept the `(localdb)` name.
 
 **Using LocalDB instead of the default instance:**
 ```powershell

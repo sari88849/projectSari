@@ -61,6 +61,6 @@ Replacing the mock with a real model means implementing the provider interface. 
 
 ## 5. Verification
 
-- **Tests:** 80 unit tests, 42 integration tests (against SQL Server, including the real Python mock) and 15 Python tests pass. The DB self-check passes on SQL Server 2019 and LocalDB 2016. The Angular production build has no warnings.
+- **Tests:** 80 unit tests, 42 integration tests (against SQL Server, including the real Python mock) and 15 Python tests pass. The DB self-check passes on SQL Server 2019 and LocalDB 2016, with both ODBC sqlcmd and go-sqlcmd. The backend builds and passes all tests with .NET SDK 10.0.404 and 10.0.115. The Angular production build has no warnings.
 - **Example controls:** the integration tests assert the exact violating records and Hebrew reasons of all 7 controls.
 - **Security:** they also cover SQL-injection attempts and database-level permission enforcement.

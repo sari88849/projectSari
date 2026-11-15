@@ -24,11 +24,27 @@ if ($busy) {
     exit 1
 }
 
+# Python 3 may be available as "python" or only through the "py" launcher; "python" can also be the
+# Microsoft Store placeholder, which does nothing. Use the first command that actually runs Python 3.
+$python = $null
+foreach ($candidate in @('python', 'py -3', 'python3')) {
+    $exe, $extra = $candidate -split ' ', 2
+    if (-not (Get-Command $exe -ErrorAction SilentlyContinue)) { continue }
+    $pyArgs = @($extra) + @('-c', 'import sys; print(sys.version_info[0])') | Where-Object { $_ }
+    $major = & $exe @pyArgs 2>$null
+    if ("$major".Trim() -eq '3') { $python = $candidate; break }
+}
+if (-not $python) {
+    Write-Host "Python 3 was not found (tried: python, py -3, python3). The AI mock will not start; the rest of the system works without it." -ForegroundColor Yellow
+}
+
 Start-Process powershell -ArgumentList "-NoExit", "-Command",
     "`$host.UI.RawUI.WindowTitle = 'Validation API :5080'; cd '$root\backend'; dotnet run --project src/ValidationSystem.Api --launch-profile http"
 
-Start-Process powershell -ArgumentList "-NoExit", "-Command",
-    "`$host.UI.RawUI.WindowTitle = 'AI mock :5005'; cd '$root\ai-mock'; python server.py --port 5005"
+if ($python) {
+    Start-Process powershell -ArgumentList "-NoExit", "-Command",
+        "`$host.UI.RawUI.WindowTitle = 'AI mock :5005'; cd '$root\ai-mock'; $python server.py --port 5005"
+}
 
 $frontend = "$root\frontend"
 $install = if (Test-Path "$frontend\node_modules") { "" } else { "npm install; " }

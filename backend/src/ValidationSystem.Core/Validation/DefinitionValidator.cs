@@ -108,8 +108,9 @@ public sealed partial class DefinitionValidator(MetadataCatalog catalog)
             var field = catalog.ResolveField(root.Key, c.Field, out var fieldError);
             if (field is null) { errors.Add(new(c.Id, fieldError!)); return; }
 
-            if (!Enum.IsDefined(c.Operator)) { errors.Add(new(c.Id, "אופרטור לא מוכר")); return; }
-            var op = OperatorCatalog.Get(c.Operator);
+            if (c.Operator is not { } opValue) { errors.Add(new(c.Id, $"יש לבחור תנאי עבור השדה '{field.Label}'")); return; }
+            if (!Enum.IsDefined(opValue)) { errors.Add(new(c.Id, "אופרטור לא מוכר")); return; }
+            var op = OperatorCatalog.Get(opValue);
             var type = field.Field.DataType;
 
             if (!op.SupportedTypes.Contains(type))

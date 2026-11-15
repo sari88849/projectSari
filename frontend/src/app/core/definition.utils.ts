@@ -72,9 +72,18 @@ export function resetOperands(condition: Condition, field: FieldDto | undefined,
   }
 }
 
-/** Removes empty optional properties before sending to the API. */
+/**
+ * Prepares the definition for the API: removes empty optional properties.
+ * An operator not chosen yet ('') is omitted, so the backend validator reports it on that row
+ * ("יש לבחור תנאי") - the strict JSON parser rightly rejects '' as an operator name.
+ */
 export function cleanDefinition(definition: ValidationDefinition): ValidationDefinition {
   const copy: ValidationDefinition = JSON.parse(JSON.stringify(definition));
   if (!copy.displayFields?.length) delete copy.displayFields;
+  const visit = (node: ConditionNode) => {
+    if (node.type === 'group') node.children.forEach(visit);
+    else if (!node.operator) delete (node as Partial<Condition>).operator;
+  };
+  visit(copy.condition);
   return copy;
 }

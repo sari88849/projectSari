@@ -146,6 +146,44 @@ public class DefinitionValidatorTests
     }
 
     [Fact]
+    public void Missing_operator_is_reported_on_its_row_and_never_defaults_to_equals()
+    {
+        var definition = DefinitionJson.Deserialize("""
+        { "rootEntity": "Employee", "condition": { "type": "group", "id": "root", "logic": "And", "children": [
+            { "type": "condition", "id": "c1", "field": "Salary" } ] } }
+        """);
+
+        Assert.Null(((Condition)definition.RootGroup.Children[0]).Operator);
+        var error = Assert.Single(_validator.Validate(definition));
+        Assert.Equal("c1", error.NodeId);
+        Assert.Contains("יש לבחור תנאי", error.Message);
+    }
+
+    [Fact]
+    public void Empty_string_operator_is_still_rejected_by_the_strict_parser()
+    {
+        Assert.ThrowsAny<JsonException>(() => DefinitionJson.Deserialize("""
+        { "rootEntity": "Employee", "condition": { "type": "group", "id": "root", "logic": "And", "children": [
+            { "type": "condition", "id": "c1", "field": "Salary", "operator": "" } ] } }
+        """));
+    }
+
+    [Fact]
+    public void Malformed_definition_error_is_business_level_without_serializer_internals()
+    {
+        var json = JsonDocument.Parse("""
+        { "rootEntity": "Employee", "condition": { "type": "group", "id": "root", "logic": "And", "children": [
+            { "type": "condition", "id": "c1", "field": "Salary", "operator": "" } ] } }
+        """).RootElement;
+
+        var ex = Assert.Throws<InvalidDefinitionException>(() => Services.ValidationService.Parse(json));
+        var message = Assert.Single(ex.Errors).Message;
+        Assert.StartsWith("מבנה הגדרת הבדיקה אינו תקין", message);
+        Assert.DoesNotContain("ValidationSystem", message);
+        Assert.DoesNotContain("BytePosition", message);
+    }
+
+    [Fact]
     public void Seed_definition_json_round_trips()
     {
         const string json = """

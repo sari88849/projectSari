@@ -40,7 +40,9 @@ public sealed class ValidationService(
         }
         catch (Exception ex) when (ex is JsonException or NotSupportedException or InvalidOperationException)
         {
-            throw new InvalidDefinitionException([new(null, "מבנה הגדרת הבדיקה אינו תקין: " + ex.Message)]);
+            // Business-level message only; serializer internals (type names, byte positions) are not shown to users.
+            var where = ex is JsonException { Path: { Length: > 0 } path } ? $" (מיקום: {path})" : "";
+            throw new InvalidDefinitionException([new(null, "מבנה הגדרת הבדיקה אינו תקין: ערך לא מוכר או חסר" + where)]);
         }
     }
 

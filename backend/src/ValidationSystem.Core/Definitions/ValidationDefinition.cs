@@ -55,7 +55,9 @@ public sealed class ConditionGroup : ConditionNode
 public sealed class Condition : ConditionNode
 {
     public string Field { get; set; } = "";
-    public ConditionOperator Operator { get; set; }
+    /// <summary>Nullable on purpose: a missing operator is reported by the validator ("not chosen yet"),
+    /// instead of silently defaulting to the enum's first value (Equals).</summary>
+    public ConditionOperator? Operator { get; set; }
     public Operand? Value { get; set; }
     /// <summary>Upper bound for Between.</summary>
     public Operand? ValueTo { get; set; }

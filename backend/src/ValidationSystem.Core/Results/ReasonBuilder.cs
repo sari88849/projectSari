@@ -34,7 +34,7 @@ public sealed class ReasonBuilder(MetadataCatalog catalog)
         var field = catalog.Resolve(rootEntity, c.Field);
         var meta = field.Field;
         var label = field.Label;
-        var op = OperatorCatalog.Get(c.Operator);
+        var op = OperatorCatalog.Get(c.Operator!.Value);   // definitions reaching here are validated
         var phrase = op.LabelFor(meta.DataType);
         var actualText = ValueFormatter.Format(actual, meta);
         string WithActual(string text) => withActual ? $"{text} (ערך בפועל: {actualText})" : text;

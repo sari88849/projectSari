@@ -104,6 +104,31 @@ public class ApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
     }
 
     [Fact]
+    public async Task Preview_of_an_unfinished_builder_row_gives_row_level_guidance_not_a_json_error()
+    {
+        // What the builder sends right after an entity is chosen (empty operator omitted by cleanDefinition).
+        var fresh = JsonDocument.Parse("""
+        { "rootEntity": "Employee", "condition": { "type": "group", "id": "root", "logic": "And", "children": [
+            { "type": "condition", "id": "c1", "field": "" } ] } }
+        """).RootElement;
+        var withField = JsonDocument.Parse("""
+        { "rootEntity": "Employee", "condition": { "type": "group", "id": "root", "logic": "And", "children": [
+            { "type": "condition", "id": "c1", "field": "Salary" } ] } }
+        """).RootElement;
+
+        foreach (var (definition, expected) in new[] { (fresh, "לא נבחר שדה"), (withField, "יש לבחור תנאי") })
+        {
+            var response = await _client.PostAsJsonAsync("/api/validations/preview", new { definition });
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var preview = await response.Content.ReadFromJsonAsync<JsonElement>();
+            Assert.False(preview.GetProperty("isValid").GetBoolean());
+            var error = Assert.Single(preview.GetProperty("errors").EnumerateArray());
+            Assert.Equal("c1", error.GetProperty("nodeId").GetString());
+            Assert.Contains(expected, error.GetProperty("message").GetString());
+        }
+    }
+
+    [Fact]
     public async Task Preview_returns_description_and_sql_without_executing()
     {
         var definition = JsonDocument.Parse("""

@@ -49,6 +49,7 @@ CREATE TABLE app.ValidationRuns
     ErrorMessage           NVARCHAR(2000)   NULL,
     GeneratedSql           NVARCHAR(MAX)    NULL,
     DefinitionSnapshotJson NVARCHAR(MAX)    NOT NULL,
+    ResultMetadataJson     NVARCHAR(MAX)    NULL,      -- { columns: [...], conditions: [...] } as they were at run time
     CONSTRAINT CK_ValidationRuns_Status CHECK (Status IN (N'Running', N'Succeeded', N'Failed'))
 );
 CREATE INDEX IX_ValidationRuns_Validation ON app.ValidationRuns (ValidationId, StartedAt DESC);

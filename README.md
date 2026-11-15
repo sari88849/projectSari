@@ -54,6 +54,8 @@ The project was developed and verified on Windows 10 with the versions below.
 
 **Database permissions.** The Windows account that runs `setup-database.ps1` must be able to create a database (e.g. `sysadmin` or `dbcreator`). The account that runs the API must be able to read and write `ValidationSystemDb` and impersonate the user `validation_reader` (`EXECUTE AS USER`). Everything was verified with a `sysadmin` login. `db_owner` of `ValidationSystemDb` is expected to be sufficient for the API, but this was not tested.
 
+**Folder location (Windows path length).** Extract the project to a reasonably short path, e.g. `C:\ValidationSystem` or a folder in Downloads; keep the project folder path under about 100 characters. Inside a very deep folder, the full path of the native SQL client library in the build output (`…\bin\…\runtimes\win-x64\native\Microsoft.Data.SqlClient.SNI.dll`) goes past the Windows limit of about 255 characters. Database access then fails with `DllNotFoundException … The filename or extension is too long`. This was reproduced at 255 characters; the same package worked at 178 and 236.
+
 **Internet.** `npm install` and the NuGet restore on the first build need internet access. The UI loads the Heebo font and Material Icons from Google Fonts; offline, it falls back to Arial and the icons show as text.
 
 ### Configuration
